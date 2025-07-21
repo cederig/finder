@@ -1,106 +1,144 @@
 # Finder
 
-`finder` est un outil en ligne de commande simple et rapide pour rechercher une chaîne de caractères dans des fichiers et des répertoires.
+`finder` is a simple and fast command-line tool written in Rust to search for a string in files and directories.
 
-## Fonctionnalités
+## Features
 
-- Recherche de chaînes de caractères dans un ou plusieurs fichiers.
-- Recherche récursive dans les répertoires.
-- Affichage du numéro de ligne et du contenu de la ligne correspondante.
-- Barre de progression pendant la recherche.
-- Statistiques de recherche (nombre de correspondances, temps écoulé, etc.).
-- Traitement parallèle pour des recherches plus rapides.
-- Sortie colorée pour une meilleure lisibilité.
+- Search for strings in one or more files.
+- Recursive search in directories.
+- Display of the line number and the content of the matching line.
+- Progress bar during the search.
+- Search statistics (number of matches, elapsed time, etc.).
+- Parallel processing for faster searches.
+- Colored output for better readability.
 
-## Dépendances
+## Dependencies
 
-Ce projet utilise les dépendances Rust suivantes :
+This project uses the following Rust dependencies (as defined in `Cargo.toml`):
 
-- `clap` (v4.5.7) : Pour l'analyse des arguments de la ligne de commande.
-- `indicatif` (v0.18.0) : Pour afficher une barre de progression.
-- `rayon` (v1.10.0) : Pour le traitement parallèle.
-- `colored` (v2.1.0) : Pour colorer la sortie du terminal.
-- `encoding_rs` (v0.8.35) : Pour la gestion des encodages de fichiers.
-- `encoding_rs_io` (v0.1.7) : Pour la lecture de fichiers avec différents encodages.
-- `ignore` (v0.4.23) : Pour ignorer les fichiers et répertoires.
-- `regex` (v1.11.1) : Pour la recherche avec des expressions régulières.
+- `clap` (version `4.5.41`) : For command-line argument parsing.
+- `indicatif` (version `0.18.0`) : For displaying a progress bar.
+- `rayon` (version `1.10.0`) : For parallel processing.
+- `colored` (version `2.1.0`) : For coloring terminal output.
+- `encoding_rs` (version `0.8.35`) : For file encoding management.
+- `encoding_rs_io` (version `0.1.7`) : For reading files with different encodings.
+- `ignore` (version `0.4.23`) : For ignoring files and directories.
+- `regex` (version `1.11.1`) : For regular expression searching.
+- `tempfile` (version `3.20.0`) : For creating temporary files and directories in tests.
 
 ## Installation
 
-1.  Assurez-vous d'avoir [Rust](https://www.rust-lang.org/tools/install) installé.
-2.  Clonez ce dépôt :
+### Prerequisites
+
+Make sure you have Rust and Cargo installed on your system. You can install them by following the instructions on the official Rust website: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
+
+### Compiling for Linux (from Linux/macOS)
+1.  Clone this repository:
     ```sh
     git clone https://github.com/cederig/finder.git
     cd finder
     ```
-3.  Compilez le projet :
+2.  Compile the project:
     ```sh
     cargo build --release
     ```
-    L'exécutable se trouvera dans `target/release/finder`.
+    The executable will be located in `target/release/finder`.
 
-## Compilation pour Windows
+### Compiling for Windows (from Linux/macOS)
 
-Pour compiler ce projet pour Windows à partir d'un autre système d'exploitation (comme Linux ou macOS), vous pouvez utiliser la compilation croisée. Vous aurez besoin de la cible Rust pour Windows.
+To cross-compile this project for Windows from another operating system (like Linux or macOS), you will need the Rust target for Windows.
 
-1.  Ajoutez la cible Windows à votre installation Rust :
+1.  Add the Windows target to your Rust installation:
     ```sh
     rustup target add x86_64-pc-windows-gnu
     ```
 
-2.  Compilez le projet pour la cible Windows :
+2.  Compile the project for the Windows target:
     ```sh
     cargo build --release --target=x86_64-pc-windows-gnu
     ```
 
-L'exécutable pour Windows se trouvera dans `target/x86_64-pc-windows-gnu/release/finder.exe`.
+The Windows executable will be located in `target/x86_64-pc-windows-gnu/release/finder.exe`.
 
-## Ignorer des fichiers
+### Compiling for macOS (from Linux/macOS)
 
-`finder` respecte automatiquement les règles définies dans les fichiers `.gitignore` et `.ignore`. Cela signifie que les fichiers et répertoires qui sont généralement ignorés dans un projet (comme `target/`, `node_modules/`, etc.) seront automatiquement exclus de la recherche. Vous pouvez personnaliser ce comportement en créant vos propres fichiers `.ignore` dans votre projet.
+To cross-compile this project for macOS from another operating system (like Linux or macOS), you will need the Rust target for macOS.
 
-```sh
-finder [OPTIONS] <PATTERN> <PATHS>...
+1.  Add the macOS target to your Rust installation (choose the correct architecture):
+    *   For Intel Macs (x86_64):
+        ```sh
+        rustup target add x86_64-apple-darwin
+        ```
+    *   For Apple Silicon Macs (aarch64):
+        ```sh
+        rustup target add aarch64-apple-darwin
+        ```
+
+2.  Compile the project for the macOS target (choose the correct architecture):
+    *   For Intel Macs:
+        ```sh
+        cargo build --release --target=x86_64-apple-darwin
+        ```
+    *   For Apple Silicon Macs:
+        ```sh
+        cargo build --release --target=aarch64-apple-darwin
+        ```
+
+The macOS executable will be located in `target/<your_mac_target>/release/finder` (e.g., `target/x86_64-apple-darwin/release/finder`).
+
+## Usage
+
+The basic syntax is as follows:
+
+```bash
+./finder [OPTIONS] <PATTERN> <PATHS>...
 ```
 
 ### Arguments
 
--   `<PATTERN>` : L'expression régulière (regex) à rechercher.
--   `<PATHS>...` : Un ou plusieurs chemins de fichiers ou de répertoires dans lesquels rechercher.
+-   `<PATTERN>` : The regular expression (regex) to search for.
+-   `<PATHS>...` : One or more file or directory paths to search within.
 
 ### Options
 
--   `-i`, `--ignore-case` : Effectue une recherche insensible à la casse.
--   `-s`, `--stat` : Affiche des statistiques détaillées après la recherche.
--   `-h`, `--help` : Affiche le message d'aide.
--   `-V`, `--version` : Affiche la version de l'outil.
+-   `-i`, `--ignore-case` : Performs a case-insensitive search.
+-   `-o`, `--output <FILE>` : Exports results to the specified file instead of displaying them on the console.
+-   `-s`, `--stat` : Displays detailed statistics after the search.
+-   `-h, --help` : Displays help message.
+-   `-V`, `--version` : Displays the tool version.
 
-### Exemples
+### Examples
 
--   Rechercher "hello" dans un fichier (le mot "hello" sera surligné en rouge) :
+-   Search for "hello" in a file (the word "hello" will be highlighted in red):
     ```sh
-    finder "hello" mon_fichier.txt
+    ./finder "hello" my_file.txt
     ```
 
--   Rechercher "error" dans plusieurs fichiers :
+-   Search for "error" in multiple files:
     ```sh
-    finder "error" fichier1.log fichier2.log
+    ./finder "error" file1.log file2.log
     ```
 
--   Rechercher "TODO" dans un répertoire entier :
+-   Search for "TODO" in an entire directory:
     ```sh
-    finder "TODO" ./mon_projet/
+    ./finder "TODO" ./my_project/
     ```
 
--   Rechercher avec des statistiques :
+-   Search with statistics:
     ```sh
-    finder --stat "important" ./docs/
+    ./finder --stat "important" ./docs/
     ```
+## Ignoring Files
+
+`finder` automatically respects rules defined in `.gitignore` and `.ignore` files. This means that files and directories typically ignored in a project (like `target/`, `node_modules/`, etc.) will be automatically excluded from the search. You can customize this behavior by creating your own `.ignore` files in your project.
+
 
 ## Tests
 
-Pour exécuter les tests unitaires, utilisez la commande suivante :
+This project includes unit tests; to run them, use the following command at the project root:
 
 ```sh
 cargo test
 ```
+
+This command compiles the program in test mode and executes all test functions.
