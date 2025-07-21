@@ -30,7 +30,7 @@ Ce projet utilise les dépendances Rust suivantes :
 1.  Assurez-vous d'avoir [Rust](https://www.rust-lang.org/tools/install) installé.
 2.  Clonez ce dépôt :
     ```sh
-    git clone https://github.com/votre-utilisateur/finder.git
+    git clone [https://github.com/votre-utilisateur/finder.git](https://github.com/cederig/finder.git)
     cd finder
     ```
 3.  Compilez le projet :
