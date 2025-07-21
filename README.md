@@ -96,7 +96,7 @@ The basic syntax is as follows:
 
 ### Arguments
 
--   `<PATTERN>` : The regular expression (regex) to search for.
+-   `<PATTERN>` : The string to search for.
 -   `<PATHS>...` : One or more file or directory paths to search within.
 
 ### Options
@@ -104,7 +104,7 @@ The basic syntax is as follows:
 -   `-i`, `--ignore-case` : Performs a case-insensitive search.
 -   `-o`, `--output <FILE>` : Exports results to the specified file instead of displaying them on the console.
 -   `-s`, `--stat` : Displays detailed statistics after the search.
--   `-h, --help` : Displays help message.
+-   `-h`, `--help` : Displays help message.
 -   `-V`, `--version` : Displays the tool version.
 
 ### Examples

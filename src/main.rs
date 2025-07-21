@@ -15,7 +15,7 @@ use regex::{Regex, RegexBuilder};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// The regex pattern to search for
+    /// The string to search for
     pattern: String,
 
     /// The path(s) to search in (files or directories)

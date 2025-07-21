@@ -96,7 +96,7 @@ La syntaxe de base est la suivante :
 
 ### Arguments
 
--   `<PATTERN>` : L'expression régulière (regex) à rechercher.
+-   `<PATTERN>` : La chaîne de caractères à rechercher.
 -   `<PATHS>...` : Un ou plusieurs chemins de fichiers ou de répertoires dans lesquels rechercher.
 
 ### Options
@@ -104,7 +104,7 @@ La syntaxe de base est la suivante :
 -   `-i`, `--ignore-case` : Effectue une recherche insensible à la casse.
 -   `-o`, `--output <FILE>` : Exporte les résultats vers le fichier spécifié au lieu de les afficher sur la console.
 -   `-s`, `--stat` : Affiche des statistiques détaillées après la recherche.
--   `-h, --help` : Affiche l'aide.
+-   `-h`, `--help` : Affiche l'aide.
 -   `-V`, `--version` : Affiche la version de l'outil.
 
 ### Exemples
