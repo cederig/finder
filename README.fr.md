@@ -107,7 +107,7 @@ La syntaxe de base est la suivante :
 -   `-h`, `--help` : Affiche l'aide.
 -   `-V`, `--version` : Affiche la version de l'outil.
 
-### Exemples
+## Exemples
 
 -   Rechercher "hello" dans un fichier (le mot "hello" sera surligné en rouge) :
     ```sh

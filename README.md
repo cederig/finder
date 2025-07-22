@@ -107,7 +107,7 @@ The basic syntax is as follows:
 -   `-h`, `--help` : Displays help message.
 -   `-V`, `--version` : Displays the tool version.
 
-### Examples
+## Examples
 
 -   Search for "hello" in a file (the word "hello" will be highlighted in red):
     ```sh
