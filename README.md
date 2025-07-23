@@ -4,9 +4,9 @@
 
 ## Features
 
-- Search for strings in one or more files.
+- Search for a single string or multiple strings from a file.
 - Recursive search in directories.
-- Display of the line number and the content of the matching line.
+- Display of the line number, the matching pattern, and the content of the matching line.
 - Progress bar during the search.
 - Search statistics (number of matches, elapsed time, etc.).
 - Parallel processing for faster searches.
@@ -88,19 +88,19 @@ The macOS executable will be located in `target/<your_mac_target>/release/finder
 
 ## Usage
 
-The basic syntax is as follows:
-
 ```bash
-./finder [OPTIONS] <PATTERN> <PATHS>...
+finder [OPTIONS] <PATHS>... -p <PATTERN>
+finder [OPTIONS] <PATHS>... -f <FILE>
 ```
 
 ### Arguments
 
--   `<PATTERN>` : The string to search for.
 -   `<PATHS>...` : One or more file or directory paths to search within.
 
 ### Options
 
+-   `-p`, `--pattern <PATTERN>` : The string to search for. Mutually exclusive with `-f`.
+-   `-f`, `--input-file <FILE>` : Search for patterns from a file (one per line). Mutually exclusive with `-p`.
 -   `-i`, `--ignore-case` : Performs a case-insensitive search.
 -   `-o`, `--output <FILE>` : Exports results to the specified file instead of displaying them on the console.
 -   `-s`, `--stat` : Displays detailed statistics after the search.
@@ -111,23 +111,29 @@ The basic syntax is as follows:
 
 -   Search for "hello" in a file (the word "hello" will be highlighted in red):
     ```sh
-    ./finder "hello" my_file.txt
+    ./finder my_file.txt -p "hello"
     ```
 
 -   Search for "error" in multiple files:
     ```sh
-    ./finder "error" file1.log file2.log
+    ./finder file1.log file2.log -p "error"
     ```
 
--   Search for "TODO" in an entire directory:
+-   Search for all patterns in `patterns.txt` in an entire directory:
     ```sh
-    ./finder "TODO" ./my_project/
+    ./finder ./my_project/ -f patterns.txt
     ```
 
 -   Search with statistics:
     ```sh
-    ./finder --stat "important" ./docs/
+    ./finder ./docs/ --stat -p "important"
     ```
+
+## Output Format
+
+The output format is as follows:
+`path/to/file:line_number:matching_pattern:line_content_with_highlight`
+
 ## Ignoring Files
 
 `finder` automatically respects rules defined in `.gitignore` and `.ignore` files. This means that files and directories typically ignored in a project (like `target/`, `node_modules/`, etc.) will be automatically excluded from the search. You can customize this behavior by creating your own `.ignore` files in your project.
@@ -138,6 +144,7 @@ The basic syntax is as follows:
 This project includes unit tests; to run them, use the following command at the project root:
 
 ```sh
+
 cargo test
 ```
 

@@ -4,9 +4,9 @@
 
 ## Fonctionnalités
 
-- Recherche de chaînes de caractères dans un ou plusieurs fichiers.
+- Recherche d'une seule chaîne de caractères ou de plusieurs chaînes à partir d'un fichier.
 - Recherche récursive dans les répertoires.
-- Affichage du numéro de ligne et du contenu de la ligne correspondante.
+- Affichage du numéro de ligne, du motif trouvé et du contenu de la ligne correspondante.
 - Barre de progression pendant la recherche.
 - Statistiques de recherche (nombre de correspondances, temps écoulé, etc.).
 - Traitement parallèle pour des recherches plus rapides.
@@ -88,19 +88,19 @@ L'exécutable pour macOS se trouvera dans `target/<votre_cible_mac>/release/find
 
 ## Utilisation
 
-La syntaxe de base est la suivante :
-
 ```bash
-./finder [OPTIONS] <PATTERN> <PATHS>...
+finder [OPTIONS] <PATHS>... -p <PATTERN>
+finder [OPTIONS] <PATHS>... -f <FILE>
 ```
 
 ### Arguments
 
--   `<PATTERN>` : La chaîne de caractères à rechercher.
 -   `<PATHS>...` : Un ou plusieurs chemins de fichiers ou de répertoires dans lesquels rechercher.
 
 ### Options
 
+-   `-p`, `--pattern <PATTERN>` : La chaîne de caractères à rechercher. Mutuellement exclusif avec `-f`.
+-   `-f`, `--input-file <FILE>` : Recherche les motifs depuis un fichier (un par ligne). Mutuellement exclusif avec `-p`.
 -   `-i`, `--ignore-case` : Effectue une recherche insensible à la casse.
 -   `-o`, `--output <FILE>` : Exporte les résultats vers le fichier spécifié au lieu de les afficher sur la console.
 -   `-s`, `--stat` : Affiche des statistiques détaillées après la recherche.
@@ -111,23 +111,29 @@ La syntaxe de base est la suivante :
 
 -   Rechercher "hello" dans un fichier (le mot "hello" sera surligné en rouge) :
     ```sh
-    ./finder "hello" mon_fichier.txt
+    ./finder mon_fichier.txt -p "hello"
     ```
 
 -   Rechercher "error" dans plusieurs fichiers :
     ```sh
-    ./finder "error" fichier1.log fichier2.log
+    ./finder fichier1.log fichier2.log -p "error"
     ```
 
--   Rechercher "TODO" dans un répertoire entier :
+-   Rechercher tous les motifs de `patterns.txt` dans un répertoire entier :
     ```sh
-    ./finder "TODO" ./mon_projet/
+    ./finder ./mon_projet/ -f patterns.txt
     ```
 
 -   Rechercher avec des statistiques :
     ```sh
-    ./finder --stat "important" ./docs/
+    ./finder ./docs/ --stat -p "important"
     ```
+
+## Format de sortie
+
+Le format de sortie est le suivant :
+`chemin/vers/le/fichier:numero_de_ligne:motif_trouve:contenu_de_la_ligne_surlignee`
+
 ## Ignorer des fichiers
 
 `finder` respecte automatiquement les règles définies dans les fichiers `.gitignore` et `.ignore`. Cela signifie que les fichiers et répertoires qui sont généralement ignorés dans un projet (comme `target/`, `node_modules/`, etc.) seront automatiquement exclus de la recherche. Vous pouvez personnaliser ce comportement en créant vos propres fichiers `.ignore` dans votre projet.
@@ -138,6 +144,7 @@ La syntaxe de base est la suivante :
 Ce projet inclut des tests unitaires; pour les exécuter, utilisez la commande suivante à la racine du projet :
 
 ```sh
+
 cargo test
 ```
 
