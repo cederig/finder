@@ -11,6 +11,7 @@
 - Search statistics (number of matches, elapsed time, etc.).
 - Parallel processing for faster searches.
 - Colored output for better readability.
+- Handles both Windows (CRLF) and Unix (LF) line endings correctly.
 
 ## Dependencies
 

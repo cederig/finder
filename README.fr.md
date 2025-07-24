@@ -11,6 +11,7 @@
 - Statistiques de recherche (nombre de correspondances, temps écoulé, etc.).
 - Traitement parallèle pour des recherches plus rapides.
 - Sortie colorée pour une meilleure lisibilité.
+- Gère correctement les fins de ligne Windows (CRLF) et Unix (LF).
 
 ## Dépendances
 

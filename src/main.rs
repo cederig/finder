@@ -1,6 +1,6 @@
 use clap::{Parser, ArgGroup};
 use std::fs;
-use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use colored::*;
 use std::collections::HashSet;
 use encoding_rs::{Encoding, WINDOWS_1252};
-use encoding_rs_io::DecodeReaderBytesBuilder;
+
 use ignore::WalkBuilder;
 use regex::{Regex, RegexBuilder};
 
@@ -55,18 +55,17 @@ struct SearchResult {
 
 fn read_lines_from_file(path: &Path) -> io::Result<Vec<String>> {
     let mut file = fs::File::open(path)?;
-    let mut buffer = [0; 4];
-    let n = file.read(&mut buffer)?;
-    file.seek(SeekFrom::Start(0))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
 
-    let (encoding, _) = Encoding::for_bom(&buffer[..n]).unwrap_or((WINDOWS_1252, 0));
+    // Detect encoding from BOM or default to WINDOWS_1252
+    let (encoding, bom_len) = Encoding::for_bom(&buffer).unwrap_or((WINDOWS_1252, 0));
 
-    let transcoded_reader = DecodeReaderBytesBuilder::new()
-        .encoding(Some(encoding))
-        .build(file);
+    // Decode the content, skipping the BOM if present
+    let (decoded_content, _, _) = encoding.decode(&buffer[bom_len..]);
 
-    let buf_reader = io::BufReader::new(transcoded_reader);
-    buf_reader.lines().collect()
+    // Split into lines, which handles both \n and \r\n correctly.
+    Ok(decoded_content.lines().map(String::from).collect())
 }
 
 fn search_in_file(path: &Path, regexes: &[Regex]) -> io::Result<Vec<SearchResult>> {
@@ -394,6 +393,19 @@ mod tests {
         assert_eq!(results[1].pattern, "third");
         assert_eq!(results[1].line, "And a third.");
 
+        test_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_search_in_file_with_crlf() {
+        let test_dir = tempdir().unwrap();
+        let test_file_path = test_dir.path().join("test_crlf.txt");
+        create_test_file(&test_file_path, "line one\r\nline two\r\nline three");
+        let re = vec![Regex::new("two").unwrap()];
+        let results = search_in_file(&test_file_path, &re).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].line_number, 2);
+        assert_eq!(results[0].line, "line two");
         test_dir.close().unwrap();
     }
 }
