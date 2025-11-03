@@ -33,7 +33,7 @@ This project uses the following Rust dependencies (as defined in `Cargo.toml`):
 
 Make sure you have Rust and Cargo installed on your system. You can install them by following the instructions on the official Rust website: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
 
-### Compiling for Linux (from Linux/macOS)
+### Compiling for Linux (from Linux)
 1.  Clone this repository:
     ```sh
     git clone https://github.com/cederig/finder.git
@@ -85,7 +85,7 @@ To cross-compile this project for macOS from another operating system (like Linu
         cargo build --release --target=aarch64-apple-darwin
         ```
 
-The macOS executable will be located in `target/<your_mac_target>/release/finder` (e.g., `target/x86_64-apple-darwin/release/finder`).
+The macOS executable will be located in `target/<your_mac_target>/release/finder`.
 
 ## Usage
 
