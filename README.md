@@ -89,7 +89,7 @@ The macOS executable will be located in `target/<your_mac_target>/release/finder
 
 ## Usage
 
-```bash
+```sh
 finder [OPTIONS] <PATHS>... -p <PATTERN>
 finder [OPTIONS] <PATHS>... -f <FILE>
 ```
