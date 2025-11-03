@@ -137,8 +137,7 @@ The output format is as follows:
 
 ## Ignoring Files
 
-`finder` automatically respects rules defined in `.gitignore` and `.ignore` files. This means that files and directories typically ignored in a project (like `target/`, `node_modules/`, etc.) will be automatically excluded from the search. You can customize this behavior by creating your own `.ignore` files in your project.
-
+`finder` automatically respects rules defined in `.gitignore` and `.ignore` files.
 
 ## Tests
 
