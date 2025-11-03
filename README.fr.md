@@ -17,15 +17,15 @@
 
 Ce projet utilise les dépendances suivantes (telles que définies dans `Cargo.toml`) :
 
-- `clap` (version `4.5.41`) : Pour l'analyse des arguments de la ligne de commande.
-- `indicatif` (version `0.18.0`) : Pour afficher une barre de progression.
-- `rayon` (version `1.10.0`) : Pour le traitement parallèle.
-- `colored` (version `2.1.0`) : Pour colorer la sortie du terminal.
+- `clap` (version `4.5.51`) : Pour l'analyse des arguments de la ligne de commande.
+- `indicatif` (version `0.18.2`) : Pour afficher une barre de progression.
+- `rayon` (version `1.11.0`) : Pour le traitement parallèle.
+- `colored` (version `3.0.0`) : Pour colorer la sortie du terminal.
 - `encoding_rs` (version `0.8.35`) : Pour la gestion des encodages de fichiers.
 - `encoding_rs_io` (version `0.1.7`) : Pour la lecture de fichiers avec différents encodages.
-- `ignore` (version `0.4.23`) : Pour ignorer les fichiers et répertoires.
-- `regex` (version `1.11.1`) : Pour la recherche avec des expressions régulières.
-- `tempfile` (version `3.20.0`) : Pour la création de fichiers et répertoires temporaires dans les tests.
+- `ignore` (version `0.4.25`) : Pour ignorer les fichiers et répertoires.
+- `regex` (version `1.12.2`) : Pour la recherche avec des expressions régulières.
+- `tempfile` (version `3.23.0`) : Pour la création de fichiers et répertoires temporaires dans les tests.
 
 ## Installation
 
@@ -144,7 +144,6 @@ Le format de sortie est le suivant :
 Ce projet inclut des tests unitaires; pour les exécuter, utilisez la commande suivante à la racine du projet :
 
 ```sh
-
 cargo test
 ```
 

@@ -17,15 +17,15 @@
 
 This project uses the following Rust dependencies (as defined in `Cargo.toml`):
 
-- `clap` (version `4.5.41`) : For command-line argument parsing.
-- `indicatif` (version `0.18.0`) : For displaying a progress bar.
-- `rayon` (version `1.10.0`) : For parallel processing.
-- `colored` (version `2.1.0`) : For coloring terminal output.
+- `clap` (version `4.5.51`) : For command-line argument parsing.
+- `indicatif` (version `0.18.2`) : For displaying a progress bar.
+- `rayon` (version `1.11.0`) : For parallel processing.
+- `colored` (version `3.0.0`) : For coloring terminal output.
 - `encoding_rs` (version `0.8.35`) : For file encoding management.
 - `encoding_rs_io` (version `0.1.7`) : For reading files with different encodings.
-- `ignore` (version `0.4.23`) : For ignoring files and directories.
-- `regex` (version `1.11.1`) : For regular expression searching.
-- `tempfile` (version `3.20.0`) : For creating temporary files and directories in tests.
+- `ignore` (version `0.4.25`) : For ignoring files and directories.
+- `regex` (version `1.12.2`) : For regular expression searching.
+- `tempfile` (version `3.23.0`) : For creating temporary files and directories in tests.
 
 ## Installation
 
@@ -144,7 +144,6 @@ The output format is as follows:
 This project includes unit tests; to run them, use the following command at the project root:
 
 ```sh
-
 cargo test
 ```
 
