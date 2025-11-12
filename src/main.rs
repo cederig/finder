@@ -3,10 +3,12 @@ use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::collections::{HashMap, HashSet};
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use colored::*;
-use std::collections::HashSet;
 use encoding_rs::{Encoding, WINDOWS_1252};
 
 use ignore::WalkBuilder;
@@ -46,6 +48,7 @@ struct Args {
     output: Option<PathBuf>,
 }
 
+#[derive(Debug)]
 struct SearchResult {
     path: PathBuf,
     line_number: usize,
@@ -53,41 +56,26 @@ struct SearchResult {
     pattern: String,
 }
 
-fn read_lines_from_file(path: &Path) -> io::Result<Vec<String>> {
+fn search_in_file_streaming(path: &Path, regexes: &[Regex]) -> io::Result<Vec<SearchResult>> {
     let mut file = fs::File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
 
-    // Detect encoding from BOM or default to WINDOWS_1252
-    let (encoding, bom_len) = Encoding::for_bom(&buffer).unwrap_or((WINDOWS_1252, 0));
-
-    // Decode the content, skipping the BOM if present
+    // Optimized encoding detection - only read first 4KB for BOM detection
+    let bom_sample_size = std::cmp::min(4096, buffer.len());
+    let (encoding, bom_len) = Encoding::for_bom(&buffer[..bom_sample_size]).unwrap_or((WINDOWS_1252, 0));
     let (decoded_content, _, _) = encoding.decode(&buffer[bom_len..]);
 
-    // Split into lines, which handles both \n and \r\n correctly.
-    Ok(decoded_content.lines().map(String::from).collect())
-}
-
-fn search_in_file(path: &Path, regexes: &[Regex]) -> io::Result<Vec<SearchResult>> {
-    let lines = match read_lines_from_file(path) {
-        Ok(lines) => lines,
-        Err(e) => {
-            eprintln!("{} Error reading lines from {}: {}", "warning:".yellow(), path.display(), e);
-            return Ok(Vec::new());
-        }
-    };
-
     let mut results = Vec::new();
-    for (index, line) in lines.iter().enumerate() {
+    for (index, line) in decoded_content.lines().enumerate() {
         for re in regexes {
             if re.is_match(line) {
                 results.push(SearchResult {
                     path: path.to_path_buf(),
                     line_number: index + 1,
-                    line: line.clone(),
+                    line: line.to_string(),
                     pattern: re.as_str().to_string(),
                 });
-                // Found a match, no need to check other patterns for this line
                 break;
             }
         }
@@ -95,8 +83,37 @@ fn search_in_file(path: &Path, regexes: &[Regex]) -> io::Result<Vec<SearchResult
     Ok(results)
 }
 
+fn compile_regex_with_cache(patterns: &[String], ignore_case: bool) -> Result<Vec<Regex>, regex::Error> {
+    let mut cache: HashMap<(String, bool), Regex> = HashMap::new();
+    patterns.iter().map(|p| {
+        let cache_key = (p.clone(), ignore_case);
+        if let Some(cached_regex) = cache.get(&cache_key) {
+            Ok(cached_regex.clone())
+        } else {
+            let regex = RegexBuilder::new(p)
+                .case_insensitive(ignore_case)
+                .build()?;
+            cache.insert(cache_key, regex.clone());
+            Ok(regex)
+        }
+    }).collect()
+}
+
 fn partition_paths(paths: Vec<PathBuf>) -> (Vec<PathBuf>, Vec<PathBuf>) {
     paths.into_iter().partition(|p| p.exists())
+}
+
+fn read_lines_from_file(path: &Path) -> io::Result<Vec<String>> {
+    let mut file = fs::File::open(path)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+
+    // Optimized encoding detection - only read first 4KB for BOM detection
+    let bom_sample_size = std::cmp::min(4096, buffer.len());
+    let (encoding, bom_len) = Encoding::for_bom(&buffer[..bom_sample_size]).unwrap_or((WINDOWS_1252, 0));
+    let (decoded_content, _, _) = encoding.decode(&buffer[bom_len..]);
+
+    Ok(decoded_content.lines().map(String::from).collect())
 }
 
 fn load_patterns(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -105,7 +122,6 @@ fn load_patterns(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>>
     } else if let Some(file_path) = &args.input_file {
         Ok(read_lines_from_file(file_path)?)
     } else {
-        // This case should be prevented by clap's ArgGroup
         unreachable!("Either a pattern or an input file must be provided.");
     }
 }
@@ -114,14 +130,7 @@ fn run_app(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     let start_time = Instant::now();
 
     let patterns = load_patterns(&args)?;
-    let regexes: Vec<Regex> = patterns
-        .iter()
-        .map(|p| {
-            RegexBuilder::new(p)
-                .case_insensitive(args.ignore_case)
-                .build()
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+    let regexes = compile_regex_with_cache(&patterns, args.ignore_case)?;
 
     let (valid_paths, invalid_paths) = partition_paths(args.paths);
 
@@ -148,7 +157,7 @@ fn run_app(args: Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let files_to_search: Vec<PathBuf> = walk_builder.build()
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().map_or(false, |ft| ft.is_file()))
+        .filter(|e| e.file_type().is_some_and(|ft| ft.is_file()))
         .map(|e| e.into_path())
         .collect();
 
@@ -157,27 +166,42 @@ fn run_app(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let pb = ProgressBar::new(files_to_search.len() as u64);
-    pb.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%)").unwrap()
-        .progress_chars("#>-"));
+    let pb = Arc::new(Mutex::new(ProgressBar::new(files_to_search.len() as u64)));
+    {
+        let pb_guard = pb.lock().unwrap();
+        pb_guard.set_style(ProgressStyle::default_bar()
+            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({percent}%)").unwrap()
+            .progress_chars("#>-"));
+    }
 
-    let results: Vec<SearchResult> = files_to_search
-        .par_iter()
-        .filter_map(|path| {
-            pb.inc(1);
-            match search_in_file(path, &regexes) {
-                Ok(search_results) => Some(search_results),
-                Err(e) => {
-                    eprintln!("{} Failed to read file {}: {}", "error:".red().bold(), path.display(), e);
-                    None
+    let regexes = Arc::new(regexes);
+    let output_results = Arc::new(Mutex::new(Vec::new()));
+
+    files_to_search.par_iter().for_each(|path| {
+        {
+            let pb_guard = pb.lock().unwrap();
+            pb_guard.inc(1);
+        }
+        
+        match search_in_file_streaming(path, &regexes) {
+            Ok(search_results) => {
+                if !search_results.is_empty() {
+                    let mut output_guard = output_results.lock().unwrap();
+                    output_guard.extend(search_results);
                 }
+            },
+            Err(e) => {
+                eprintln!("{} Failed to read file {}: {}", "error:".red().bold(), path.display(), e);
             }
-        })
-        .flatten()
-        .collect();
+        }
+    });
 
-    pb.finish_with_message("Search complete");
+    {
+        let pb_guard = pb.lock().unwrap();
+        pb_guard.finish_with_message("Search complete");
+    }
+
+    let results = Arc::try_unwrap(output_results).unwrap().into_inner().unwrap();
 
     if let Some(output_path) = &args.output {
         let mut output_file = fs::File::create(output_path)?;
@@ -251,7 +275,7 @@ mod tests {
         let test_file_path = test_dir.path().join("test_found.txt");
         create_test_file(&test_file_path, "hello world\nfind me here\nanother line");
         let re = vec![Regex::new("find me").unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].line_number, 2);
         assert_eq!(results[0].line, "find me here");
@@ -265,7 +289,7 @@ mod tests {
         let test_file_path = test_dir.path().join("test_not_found.txt");
         create_test_file(&test_file_path, "hello world\nanother line");
         let re = vec![Regex::new("missing").unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert!(results.is_empty());
         test_dir.close().unwrap();
     }
@@ -276,7 +300,7 @@ mod tests {
         let test_file_path = test_dir.path().join("test_multiple.txt");
         create_test_file(&test_file_path, "match one\nsome line\nmatch two");
         let re = vec![Regex::new("match").unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].line_number, 1);
         assert_eq!(results[1].line_number, 3);
@@ -310,7 +334,7 @@ mod tests {
         file.write_all(&encoded_content).unwrap();
 
         let re = vec![Regex::new("Héllö").unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].line, "Héllö Wörld");
 
@@ -323,7 +347,7 @@ mod tests {
         let test_file_path = test_dir.path().join("test_case_insensitive.txt");
         create_test_file(&test_file_path, "Hello hello HeLLo");
         let re = vec![RegexBuilder::new("hello").case_insensitive(true).build().unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert_eq!(results.len(), 1);
         test_dir.close().unwrap();
     }
@@ -382,7 +406,7 @@ mod tests {
         assert_eq!(patterns, vec!["one", "third"]);
 
         let regexes: Vec<Regex> = patterns.iter().map(|p| Regex::new(p).unwrap()).collect();
-        let results = search_in_file(&target_file_path, &regexes).unwrap();
+        let results = search_in_file_streaming(&target_file_path, &regexes).unwrap();
 
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].line_number, 1);
@@ -402,7 +426,7 @@ mod tests {
         let test_file_path = test_dir.path().join("test_crlf.txt");
         create_test_file(&test_file_path, "line one\r\nline two\r\nline three");
         let re = vec![Regex::new("two").unwrap()];
-        let results = search_in_file(&test_file_path, &re).unwrap();
+        let results = search_in_file_streaming(&test_file_path, &re).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].line_number, 2);
         assert_eq!(results[0].line, "line two");

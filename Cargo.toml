@@ -1,15 +1,14 @@
 [package]
 name = "finder"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.51", features = ["derive"] }
-indicatif = "0.18.2"
+indicatif = "0.18.3"
 rayon = "1.11.0"
 colored = "3.0.0"
 encoding_rs = "0.8.35"
-encoding_rs_io = "0.1.7"
 ignore = "0.4.25"
 regex = "1.12.2"
 tempfile = "3.23.0"
